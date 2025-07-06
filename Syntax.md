@@ -127,7 +127,39 @@ for i in 0..5:
 see()   \ displays to terminal/console/etc.
 
 # Error handling
-TBD
+If an unrecoverable error occurs, the program terminates with a descriptive message:
+```
+A = [[1, 2], [3, 4]]
+B = [1, 2, 3]
+
+C = A @ B   # Runtime error: Incompatible dimensions
+```
+Console output:
+
+Error: Matrix dimensions do not align for multiplication (2x2 @ 3x1)
+
+You can attempt risky operations with try:
+
+try:
+    AI = inv(A)   # Try to invert matrix
+    print(AI)
+except:
+    print("Matrix is singular, cannot invert")
+
+result = try inv(A)
+
+if result.is_error:
+    print("Failed to invert matrix")
+else:
+    print(result.value)
+
+The complier should catch:
+x = 5
+y = "hello"
+
+z = x + y   # Compile-time error: Cannot add int and string
+
+
 
 # Static typing
 All variables will have a fixed type at compile. 
