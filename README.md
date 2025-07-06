@@ -23,10 +23,8 @@ Inspired by the simplicity of Python and the numerical power of MATLAB, Dakota a
 
 ```eng
 # Vector and matrix declarations
-x = [1, 2, 3]
-A = [[1, 2, 3],
-     [4, 5, 6],
-     [7, 8, 9]]
+x = [1;2;3]
+A = [1,0,0;0,1,0;0,0,1]
 
 # Matrix-vector multiplication
 y = A @ x
