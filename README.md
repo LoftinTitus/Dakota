@@ -38,13 +38,13 @@ print(y)
 # TODO List for EngLang
 
 ## Language Design
-- [ ] Finalize core syntax (variables, math, matrix operations)
-- [ ] Design type system (scalar, vector, matrix, etc.)
-- [ ] Define standard library scope (math, linear algebra)
+- [X] Finalize core syntax (variables, math, matrix operations)
+- [X] Design type system (scalar, vector, matrix, etc.)
+- [X] Define standard library scope (math, linear algebra)
 
 ##  Compiler Development
 - [ ] Set up C++ project with CMake
-- [ ] Implement lexer (tokenizer)
+- [X] Implement lexer (tokenizer)
 - [ ] Build parser and AST structures
 - [ ] Integrate LLVM for code generation
 - [ ] Wrap Eigen or BLAS/LAPACK for matrix operations
