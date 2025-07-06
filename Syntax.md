@@ -96,3 +96,42 @@ A.T   \ Transpose of A
 A.d   \ Determinant of A
 A.tr    \ Trace of A
 ```
+
+# Function declarations
+Functions are defined using "func"
+func add(a, b):
+    return a + b
+
+# Control flow
+If/else statements:
+x = 5
+
+if x > 3:
+    print("Greater")
+else:
+    print("Smaller or equal")
+
+While loops:
+i = 0
+
+while i < 5:
+    print(i)
+    i = i + 1
+
+For loops:
+for i in 0..5:
+    print(i)
+
+# Built in functions
+
+see()   \ displays to terminal/console/etc.
+
+# Error handling
+TBD
+
+# Static typing
+All variables will have a fixed type at compile. 
+Type inference reduces need for explicit annotations.
+Compiler enforces type safety for performance and correctness
+
+# Future considerations
