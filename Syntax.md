@@ -41,25 +41,29 @@ x = 5  \ Inline comment
 
 ## Variables
 Variables are declared implicitly by assignment. The compiler infers types where possible, but types are strictly enforced for performance.
-
+```
 x = 5               \ Integer
 y = 3.14            \ Float
 name = "Dakota"    \ String
 flag = true         \ Bool
-
+```
 ## Literals
 
 # Numbers
+```
 a = 10
 b = 3.14
+```
 
 # Booleans
+```
 c = true
 d = false
-
+```
 # Strings
+```
 msg = "Hello, World!"
-
+```
 ## Expressions and operators
 
 # Arithmetic
@@ -104,27 +108,34 @@ func add(a, b):
 
 # Control flow
 If/else statements:
+```
 x = 5
 
 if x > 3:
     print("Greater")
 else:
     print("Smaller or equal")
+```
 
 While loops:
+```
 i = 0
 
 while i < 5:
     print(i)
     i = i + 1
+```
 
 For loops:
+```
 for i in 0..5:
     print(i)
+```
 
 # Built in functions
-
+```
 see()   \ displays to terminal/console/etc.
+```
 
 # Error handling
 If an unrecoverable error occurs, the program terminates with a descriptive message:
@@ -139,7 +150,7 @@ Console output:
 Error: Matrix dimensions do not align for multiplication (2x2 @ 3x1)
 
 You can attempt risky operations with try:
-
+```
 try:
     AI = inv(A)   # Try to invert matrix
     print(AI)
@@ -152,13 +163,15 @@ if result.is_error:
     print("Failed to invert matrix")
 else:
     print(result.value)
+```
 
 The complier should catch:
+```
 x = 5
 y = "hello"
 
 z = x + y   # Compile-time error: Cannot add int and string
-
+```
 
 
 # Static typing
