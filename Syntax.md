@@ -135,3 +135,25 @@ Type inference reduces need for explicit annotations.
 Compiler enforces type safety for performance and correctness
 
 # Future considerations
+A unit declaration system to simplify calculations and prevent errors:
+```
+length = 5 [m]
+time = 2 [s]
+velocity = length / time  # Units tracked automatically
+
+force = mass * acceleration
+```
+
+Complex number support:
+```
+z = 3 + 4i
+magnitude = abs(z)
+conjugate = z.conj()
+```
+
+Native plotting to make it easier to visulize data:
+
+x = linspace(0, 10, 100)
+y = sin(x)
+
+plt(x, y)
