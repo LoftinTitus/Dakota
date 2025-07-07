@@ -109,6 +109,7 @@ private:
     int base_indent;        // Base indentation level (detected from first indent)
     int tab_size;           // How many spaces a tab represents
     bool first_indent_detected;
+    bool preserve_comments; // Whether to include comments in token stream
     
     // Keywords map
     static const std::unordered_map<std::string, TokenType> keywords;
@@ -128,7 +129,7 @@ private:
     bool is_alnum(char c) const;
     
 public:
-    Lexer(const std::string& source_code, int tab_size = 4);
+    Lexer(const std::string& source_code, int tab_size = 4, bool preserve_comments = false);
     
     // Main tokenization method
     std::vector<Token> tokenize();

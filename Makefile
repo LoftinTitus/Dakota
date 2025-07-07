@@ -13,8 +13,10 @@ TARGET = $(BINDIR)/dakota
 TEST_TARGET = $(BINDIR)/test_lexer
 INDENT_TEST_TARGET = $(BINDIR)/test_indentation
 INTEGER_INDENT_TEST_TARGET = $(BINDIR)/test_integer_indent
+BENCHMARK_TARGET = $(BINDIR)/benchmark_comments
+OPTIMIZED_BENCHMARK_TARGET = $(BINDIR)/benchmark_optimized
 
-.PHONY: all clean test test-indent test-integer-indent
+.PHONY: all clean test test-indent test-integer-indent benchmark benchmark-optimized
 
 all: $(TARGET)
 
@@ -26,6 +28,18 @@ test-indent: $(INDENT_TEST_TARGET)
 
 test-integer-indent: $(INTEGER_INDENT_TEST_TARGET)
 	./$(INTEGER_INDENT_TEST_TARGET)
+
+benchmark: $(BENCHMARK_TARGET)
+	./$(BENCHMARK_TARGET)
+
+benchmark-optimized: $(OPTIMIZED_BENCHMARK_TARGET)
+	./$(OPTIMIZED_BENCHMARK_TARGET)
+
+$(OPTIMIZED_BENCHMARK_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/benchmark_optimized.o | $(BINDIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+$(BENCHMARK_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/benchmark_comments.o | $(BINDIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(INTEGER_INDENT_TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/test_integer_indent.o | $(BINDIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
@@ -56,3 +70,5 @@ $(OBJDIR)/lexer.o: $(SRCDIR)/lexer.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/test_lexer.o: $(SRCDIR)/test_lexer.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/test_indentation.o: $(SRCDIR)/test_indentation.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/test_integer_indent.o: $(SRCDIR)/test_integer_indent.cpp $(SRCDIR)/lexer.h
+$(OBJDIR)/benchmark_comments.o: $(SRCDIR)/benchmark_comments.cpp $(SRCDIR)/lexer.h
+$(OBJDIR)/benchmark_optimized.o: $(SRCDIR)/benchmark_optimized.cpp $(SRCDIR)/lexer.h

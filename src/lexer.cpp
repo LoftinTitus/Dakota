@@ -23,10 +23,10 @@ const std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"mult", TokenType::MATMUL}
 };
 
-Lexer::Lexer(const std::string& source_code, int tab_size) 
+Lexer::Lexer(const std::string& source_code, int tab_size, bool preserve_comments) 
     : source(source_code), position(0), line(1), column(1), 
       indent_style(Lexer::IndentStyle::UNKNOWN), base_indent(0), 
-      tab_size(tab_size), first_indent_detected(false) {
+      tab_size(tab_size), first_indent_detected(false), preserve_comments(preserve_comments) {
     indent_stack.push_back(0); // Start with no indentation
     current_char = position < source.length() ? source[position] : '\0';
 }
@@ -353,9 +353,18 @@ Token Lexer::next_token() {
             return make_identifier();
         }
         
-        // Comments
+        // Comments - skip entirely for performance (unless preserve_comments is true)
         if (current_char == '\\') {
-            return make_comment();
+            if (preserve_comments) {
+                return make_comment();
+            } else {
+                // Skip comment without creating a token
+                advance(); // Skip the backslash
+                while (current_char != '\n' && current_char != '\0') {
+                    advance();
+                }
+                continue; // Go to next iteration to get the next token
+            }
         }
         
         // Two-character operators
@@ -430,10 +439,12 @@ std::vector<Token> Lexer::tokenize() {
             at_line_start = false;
         }
         
-        // Skip comments in the final token stream
-        if (token.type != TokenType::COMMENT) {
-            tokens.push_back(token);
+        // Add tokens to final stream (filter comments if not preserving them)
+        if (!preserve_comments && token.type == TokenType::COMMENT) {
+            // Skip comment tokens when not preserving
+            continue;
         }
+        tokens.push_back(token);
         
         if (token.type == TokenType::EOF_TOKEN) {
             break;
