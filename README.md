@@ -21,7 +21,7 @@ Inspired by the simplicity of Python and the numerical power of MATLAB, Dakota a
 
 ## Example (Planned Syntax)
 
-```eng
+```
 # Vector and matrix declarations
 x = [1;2;3]
 A = [1,0,0;0,1,0;0,0,1]
@@ -34,6 +34,7 @@ B = A.T + A
 
 # Print result
 print(y)
+```
 
 # TODO List for EngLang
 
