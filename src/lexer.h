@@ -103,6 +103,13 @@ private:
     // Indentation stack for tracking nested blocks
     std::vector<int> indent_stack;
     
+    // Indentation style tracking
+    enum class IndentStyle { UNKNOWN, SPACES, TABS };
+    IndentStyle indent_style;
+    int base_indent;        // Base indentation level (detected from first indent)
+    int tab_size;           // How many spaces a tab represents
+    bool first_indent_detected;
+    
     // Keywords map
     static const std::unordered_map<std::string, TokenType> keywords;
     
@@ -115,12 +122,13 @@ private:
     Token make_identifier();
     Token make_comment();
     std::vector<Token> handle_indentation();
+    void validate_indentation_style(bool has_spaces, bool has_tabs, int current_indent);
     bool is_alpha(char c) const;
     bool is_digit(char c) const;
     bool is_alnum(char c) const;
     
 public:
-    Lexer(const std::string& source_code);
+    Lexer(const std::string& source_code, int tab_size = 4);
     
     // Main tokenization method
     std::vector<Token> tokenize();

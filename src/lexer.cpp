@@ -23,8 +23,10 @@ const std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"mult", TokenType::MATMUL}
 };
 
-Lexer::Lexer(const std::string& source_code) 
-    : source(source_code), position(0), line(1), column(1) {
+Lexer::Lexer(const std::string& source_code, int tab_size) 
+    : source(source_code), position(0), line(1), column(1), 
+      indent_style(Lexer::IndentStyle::UNKNOWN), base_indent(0), 
+      tab_size(tab_size), first_indent_detected(false) {
     indent_stack.push_back(0); // Start with no indentation
     current_char = position < source.length() ? source[position] : '\0';
 }
@@ -174,22 +176,92 @@ Token Lexer::make_comment() {
     return Token(TokenType::COMMENT, comment, start_line, start_column);
 }
 
+void Lexer::validate_indentation_style(bool has_spaces, bool has_tabs, int current_indent) {
+    // Check for mixed tabs and spaces
+    if (has_spaces && has_tabs) {
+        throw std::runtime_error("Mixed tabs and spaces in indentation at line " + 
+                                std::to_string(line) + ". Use either tabs OR spaces consistently.");
+    }
+    
+    // Determine indentation style on first indented line
+    if (indent_style == Lexer::IndentStyle::UNKNOWN && current_indent > 0) {
+        if (has_tabs) {
+            indent_style = Lexer::IndentStyle::TABS;
+            base_indent = 1; // One tab is the base unit
+        } else if (has_spaces) {
+            indent_style = Lexer::IndentStyle::SPACES;
+            base_indent = current_indent; // This becomes our base indentation
+            
+            // Enforce minimum indentation requirement
+            if (base_indent < 2) {
+                throw std::runtime_error("Indentation error at line " + std::to_string(line) + 
+                                       ": Minimum indentation is 2 spaces, got " + 
+                                       std::to_string(base_indent));
+            }
+            
+            // Warn about unusual indentation sizes
+            if (base_indent != 2 && base_indent != 4 && base_indent != 8) {
+                std::cerr << "Warning: Unusual indentation width of " << base_indent 
+                          << " spaces detected at line " << line 
+                          << ". Consider using 2, 4, or 8 spaces for better readability." << std::endl;
+            }
+        }
+        first_indent_detected = true;
+    }
+    
+    // Enforce style consistency after first detection
+    if (indent_style == Lexer::IndentStyle::TABS && has_spaces) {
+        throw std::runtime_error("Inconsistent indentation at line " + std::to_string(line) + 
+                                ": Expected tabs but found spaces");
+    }
+    if (indent_style == Lexer::IndentStyle::SPACES && has_tabs) {
+        throw std::runtime_error("Inconsistent indentation at line " + std::to_string(line) + 
+                                ": Expected spaces but found tabs");
+    }
+    
+    // For space-based indentation, enforce that all levels are multiples of base_indent
+    if (indent_style == Lexer::IndentStyle::SPACES && first_indent_detected && 
+        current_indent > 0 && current_indent % base_indent != 0) {
+        throw std::runtime_error("Indentation error at line " + std::to_string(line) + 
+                                ": Expected indentation to be a multiple of " + 
+                                std::to_string(base_indent) + " spaces, but got " + 
+                                std::to_string(current_indent));
+    }
+}
+
 std::vector<Token> Lexer::handle_indentation() {
     std::vector<Token> tokens;
-    int current_indent = 0;
+    size_t start_column = column;
     
-    // Count spaces at beginning of line
+    // O(1) memory: track indentation as integer counter only
+    int current_indent = 0;
+    bool has_spaces = false;
+    bool has_tabs = false;
+    
+    // Count leading whitespace efficiently - no string building
     while (current_char == ' ' || current_char == '\t') {
         if (current_char == ' ') {
+            has_spaces = true;
             current_indent++;
         } else if (current_char == '\t') {
-            current_indent += 4; // Treat tab as 4 spaces
+            has_tabs = true;
+            current_indent += tab_size; // Use configurable tab size
         }
         advance();
     }
     
+    validate_indentation_style(has_spaces, has_tabs, current_indent);
+    
     // Skip empty lines (but not comment-only lines - let them be tokenized)
     if (current_char == '\n') {
+        return tokens;
+    }
+    
+    // Check if this is a continuation line (starts with an operator or similar)
+    if (current_char == '+' || current_char == '-' || current_char == '*' || 
+        current_char == '/' || current_char == '=' || current_char == ',' ||
+        current_char == '.' || current_char == '&' || current_char == '|') {
+        // This might be a continuation line, don't process indentation
         return tokens;
     }
     
@@ -197,19 +269,54 @@ std::vector<Token> Lexer::handle_indentation() {
     
     if (current_indent > previous_indent) {
         // Increased indentation
+        int indent_diff = current_indent - previous_indent;
+        
+        // For spaces: enforce minimum increase and proper multiples
+        if (indent_style == Lexer::IndentStyle::SPACES) {
+            if (!first_indent_detected) {
+                // This is the first indent - it sets our base
+                base_indent = indent_diff;
+                first_indent_detected = true;
+                
+                if (base_indent < 2) {
+                    throw std::runtime_error("Indentation error at line " + std::to_string(line) + 
+                                           ": Minimum indentation increase is 2 spaces, got " + 
+                                           std::to_string(base_indent));
+                }
+            } else {
+                // Subsequent indents must be multiples of base_indent
+                if (indent_diff % base_indent != 0) {
+                    throw std::runtime_error("Indentation error at line " + std::to_string(line) + 
+                                           ": Indentation increase must be a multiple of " + 
+                                           std::to_string(base_indent) + " spaces, got " + 
+                                           std::to_string(indent_diff));
+                }
+            }
+        }
+        
+        // For tabs: any increase is valid (each tab is one level)
+        if (indent_style == Lexer::IndentStyle::TABS && !first_indent_detected) {
+            first_indent_detected = true;
+        }
+        
         indent_stack.push_back(current_indent);
-        tokens.push_back(Token(TokenType::INDENT, "", line, column));
+        tokens.push_back(Token(TokenType::INDENT, "", line, start_column));
+        
     } else if (current_indent < previous_indent) {
         // Decreased indentation - may need multiple DEDENT tokens
         while (!indent_stack.empty() && indent_stack.back() > current_indent) {
             indent_stack.pop_back();
-            tokens.push_back(Token(TokenType::DEDENT, "", line, column));
+            tokens.push_back(Token(TokenType::DEDENT, "", line, start_column));
         }
         
+        // Check that we've returned to a valid indentation level
         if (indent_stack.empty() || indent_stack.back() != current_indent) {
-            throw std::runtime_error("Indentation error at line " + std::to_string(line));
+            throw std::runtime_error("Indentation error at line " + std::to_string(line) + 
+                                   ": Indentation level " + std::to_string(current_indent) + 
+                                   " does not match any previous indentation level");
         }
     }
+    // If current_indent == previous_indent, no tokens needed
     
     return tokens;
 }

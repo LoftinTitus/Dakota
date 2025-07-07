@@ -11,13 +11,27 @@ OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 # Targets
 TARGET = $(BINDIR)/dakota
 TEST_TARGET = $(BINDIR)/test_lexer
+INDENT_TEST_TARGET = $(BINDIR)/test_indentation
+INTEGER_INDENT_TEST_TARGET = $(BINDIR)/test_integer_indent
 
-.PHONY: all clean test
+.PHONY: all clean test test-indent test-integer-indent
 
 all: $(TARGET)
 
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
+
+test-indent: $(INDENT_TEST_TARGET)
+	./$(INDENT_TEST_TARGET)
+
+test-integer-indent: $(INTEGER_INDENT_TEST_TARGET)
+	./$(INTEGER_INDENT_TEST_TARGET)
+
+$(INTEGER_INDENT_TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/test_integer_indent.o | $(BINDIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+$(INDENT_TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/test_indentation.o | $(BINDIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/test_lexer.o | $(BINDIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
@@ -40,3 +54,5 @@ clean:
 # Dependencies
 $(OBJDIR)/lexer.o: $(SRCDIR)/lexer.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/test_lexer.o: $(SRCDIR)/test_lexer.cpp $(SRCDIR)/lexer.h
+$(OBJDIR)/test_indentation.o: $(SRCDIR)/test_indentation.cpp $(SRCDIR)/lexer.h
+$(OBJDIR)/test_integer_indent.o: $(SRCDIR)/test_integer_indent.cpp $(SRCDIR)/lexer.h
