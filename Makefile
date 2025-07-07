@@ -15,8 +15,9 @@ INDENT_TEST_TARGET = $(BINDIR)/test_indentation
 INTEGER_INDENT_TEST_TARGET = $(BINDIR)/test_integer_indent
 BENCHMARK_TARGET = $(BINDIR)/benchmark_comments
 OPTIMIZED_BENCHMARK_TARGET = $(BINDIR)/benchmark_optimized
+PARSER_TEST_TARGET = $(BINDIR)/test_parser
 
-.PHONY: all clean test test-indent test-integer-indent benchmark benchmark-optimized
+.PHONY: all clean test test-indent test-integer-indent benchmark benchmark-optimized test-parser
 
 all: $(TARGET)
 
@@ -34,6 +35,12 @@ benchmark: $(BENCHMARK_TARGET)
 
 benchmark-optimized: $(OPTIMIZED_BENCHMARK_TARGET)
 	./$(OPTIMIZED_BENCHMARK_TARGET)
+
+test-parser: $(PARSER_TEST_TARGET)
+	./$(PARSER_TEST_TARGET)
+
+$(PARSER_TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/parser.o $(OBJDIR)/test_parser.o | $(BINDIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(OPTIMIZED_BENCHMARK_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/benchmark_optimized.o | $(BINDIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
@@ -67,8 +74,10 @@ clean:
 
 # Dependencies
 $(OBJDIR)/lexer.o: $(SRCDIR)/lexer.cpp $(SRCDIR)/lexer.h
+$(OBJDIR)/parser.o: $(SRCDIR)/parser.cpp $(SRCDIR)/parser.h $(SRCDIR)/lexer.h
 $(OBJDIR)/test_lexer.o: $(SRCDIR)/test_lexer.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/test_indentation.o: $(SRCDIR)/test_indentation.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/test_integer_indent.o: $(SRCDIR)/test_integer_indent.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/benchmark_comments.o: $(SRCDIR)/benchmark_comments.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/benchmark_optimized.o: $(SRCDIR)/benchmark_optimized.cpp $(SRCDIR)/lexer.h
+$(OBJDIR)/test_parser.o: $(SRCDIR)/test_parser.cpp $(SRCDIR)/parser.h $(SRCDIR)/lexer.h
