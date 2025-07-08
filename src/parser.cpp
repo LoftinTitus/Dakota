@@ -934,7 +934,7 @@ void Parser::create_program_block() {
 }
 
 void Parser::print_ast(uint32_t node_index, int indent) const {
-    if (node_index >= ctx.nodes.size()) return;
+    if (node_index >= ctx.nodes.size() || node_index == INVALID_INDEX) return;
     
     const ASTNode& node = ctx.nodes[node_index];
     
@@ -990,9 +990,9 @@ void Parser::print_ast(uint32_t node_index, int indent) const {
             break;
     }
     
-    // Print children
+    // Print children using proper INVALID_INDEX check
     uint32_t child_index = node.first_child_index;
-    while (child_index != 0) {
+    while (child_index != INVALID_INDEX) {
         print_ast(child_index, indent + 1);
         child_index = ctx.nodes[child_index].next_sibling_index;
     }

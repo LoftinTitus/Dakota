@@ -32,7 +32,8 @@ product = matrix mult result
             std::cout << "Memory usage: " << parser.get_memory_usage() << " bytes\n";
             
             std::cout << "\nAST Structure:\n";
-            parser.print_ast();
+            // Start from root node (0) instead of node 1
+            parser.print_ast(0);
         }
         
     } catch (const std::exception& e) {
