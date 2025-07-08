@@ -6,7 +6,6 @@
 namespace Dakota {
 
 // Constants for better type safety and clarity
-constexpr uint32_t INVALID_INDEX = UINT32_MAX;
 constexpr uint32_t ROOT_NODE_INDEX = 0;
 
 // Operator precedence table - ordered by precedence (higher = higher precedence)
@@ -68,8 +67,10 @@ Parser::Parser(const std::vector<Token>& tokens) : ctx(tokens) {
     // Add empty string at index 0
     ctx.strings.add_string("");
     
-    // Create root program node
+    // Create root program node with proper initialization
     ctx.nodes.emplace_back(NodeType::PROGRAM, 0);
+    // Root node has no parent, so parent_index should be INVALID_INDEX
+    ctx.nodes[ROOT_NODE_INDEX].parent_index = INVALID_INDEX;
     ctx.current_node_index = ROOT_NODE_INDEX;
 }
 
@@ -241,8 +242,6 @@ uint32_t Parser::parse() {
 }
 
 void Parser::parse_program() {
-    uint32_t program_index = ROOT_NODE_INDEX; // Root node
-    
     while (!at_end()) {
         if (match(TokenType::NEWLINE)) {
             continue; // Skip empty lines
@@ -261,14 +260,14 @@ void Parser::parse_program() {
         // Fail fast: if we didn't advance, we're stuck
         if (ctx.current_token == start_token && !at_end()) {
             error_at_current("Unexpected token in program");
+            advance(); // Force advancement to prevent infinite loop
             synchronize(); // Try to recover
             continue;
         }
         
-        // Continue parsing even with errors for better error reporting
+        // If there was an error, don't reset it here - let it propagate
         if (ctx.has_error) {
-            ctx.has_error = false; // Reset error flag for next statement
-            synchronize(); // Try to recover
+            break; // Stop parsing on error
         }
     }
 }
@@ -338,6 +337,11 @@ void Parser::parse_statement() {
         ctx.node_stack.pop_back();
         ctx.nodes[expr_stmt_node].expression_statement.expression_index = expr_node;
         add_child(ROOT_NODE_INDEX, expr_stmt_node);
+    } else {
+        // If expression parsing failed and we have no nodes, advance to prevent infinite loop
+        if (!at_end()) {
+            advance();
+        }
     }
 }
 
@@ -509,61 +513,89 @@ void Parser::parse_primary() {
 }
 
 void Parser::parse_matrix_literal() {
+    std::cout << "[parse_matrix_literal] start\n";
+
     advance(); // consume '['
-    
+    std::cout << "[parse_matrix_literal] consumed '[' token\n";
+
     uint32_t matrix_node = create_node(NodeType::MATRIX_LITERAL);
     std::vector<uint32_t> elements;
     uint32_t rows = 0, cols = 0;
-    
+
     if (!check(TokenType::RBRACKET)) {
-        // Parse first row
-        uint32_t row_cols = 0;
-        do {
-            parse_expression();
-            elements.push_back(ctx.node_stack.back());
-            ctx.node_stack.pop_back();
-            row_cols++;
-        } while (match(TokenType::COMMA));
-        
-        cols = row_cols;
-        rows = 1;
-        
-        // Parse additional rows
-        while (match(TokenType::SEMICOLON)) {
-            row_cols = 0;
+        bool parsing_rows = true;
+        while (parsing_rows) {
+            uint32_t row_cols = 0;
+            std::cout << "[parse_matrix_literal] parsing new row\n";
+
             do {
+                std::cout << "  [parse_matrix_literal] current token type: " << static_cast<int>(current_token().type) << " value: '" << current_token().value << "'\n";
+
+                if (check(TokenType::RBRACKET)) {
+                    error_at_current("Unexpected ']' inside matrix row");
+                    return;
+                }
+
                 parse_expression();
+
+                if (ctx.node_stack.empty()) {
+                    error_at_current("Failed to parse matrix element");
+                    return;
+                }
+
                 elements.push_back(ctx.node_stack.back());
                 ctx.node_stack.pop_back();
                 row_cols++;
+
+                std::cout << "  [parse_matrix_literal] parsed element, row_cols=" << row_cols << "\n";
+
             } while (match(TokenType::COMMA));
-            
-            if (cols != row_cols) {
+
+            if (rows == 0) {
+                cols = row_cols;
+                std::cout << "  [parse_matrix_literal] first row columns = " << cols << "\n";
+            } else if (row_cols != cols) {
                 error_at_current("Inconsistent matrix row lengths");
                 return;
             }
+
             rows++;
+            std::cout << "  [parse_matrix_literal] rows so far: " << rows << "\n";
+
+            if (match(TokenType::SEMICOLON)) {
+                std::cout << "  [parse_matrix_literal] found ';', continuing to next row\n";
+                // Continue parsing next row
+                continue;
+            } else {
+                parsing_rows = false;
+                std::cout << "  [parse_matrix_literal] no more rows\n";
+            }
         }
     }
-    
+
     if (!match(TokenType::RBRACKET)) {
         error_at_current("Expected ']' after matrix literal");
         return;
     }
-    
+
+    std::cout << "[parse_matrix_literal] found closing ']'\n";
+
     ctx.nodes[matrix_node].matrix_literal.rows = rows;
     ctx.nodes[matrix_node].matrix_literal.cols = cols;
-    
+
     if (!elements.empty()) {
         ctx.nodes[matrix_node].matrix_literal.elements_start_index = elements[0];
-        // Link elements as siblings
+
         for (size_t i = 1; i < elements.size(); i++) {
-            ctx.nodes[elements[i-1]].next_sibling_index = elements[i];
+            ctx.nodes[elements[i - 1]].next_sibling_index = elements[i];
         }
     }
-    
+
     ctx.node_stack.push_back(matrix_node);
+
+    std::cout << "[parse_matrix_literal] done\n";
 }
+
 
 void Parser::parse_assignment() {
     if (!check(TokenType::IDENTIFIER)) {

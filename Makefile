@@ -80,4 +80,5 @@ $(OBJDIR)/test_indentation.o: $(SRCDIR)/test_indentation.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/test_integer_indent.o: $(SRCDIR)/test_integer_indent.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/benchmark_comments.o: $(SRCDIR)/benchmark_comments.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/benchmark_optimized.o: $(SRCDIR)/benchmark_optimized.cpp $(SRCDIR)/lexer.h
-$(OBJDIR)/test_parser.o: $(SRCDIR)/test_parser.cpp $(SRCDIR)/parser.h $(SRCDIR)/lexer.h
+$(OBJDIR)/test_parser.o: tests/test_parser.cpp $(SRCDIR)/parser.h $(SRCDIR)/lexer.h
+	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -c tests/test_parser.cpp -o $(OBJDIR)/test_parser.o

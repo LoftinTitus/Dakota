@@ -10,6 +10,7 @@
 namespace Dakota {
 
 // Constants for parser configuration
+constexpr uint32_t INVALID_INDEX = UINT32_MAX;  // Invalid node index
 constexpr size_t MAX_STATE_STACK_DEPTH = 256;  // Prevent stack overflow
 constexpr size_t MAX_MATRIX_DIMENSIONS = 1000;  // Reasonable matrix size limit
 constexpr size_t DEFAULT_NODES_CAPACITY = 2048;  // Initial node capacity
@@ -207,8 +208,8 @@ struct ASTNode {
     
     // Constructor for easy initialization
     ASTNode(NodeType t = NodeType::INVALID, uint32_t token_idx = 0)
-        : type(t), token_index(token_idx), parent_index(0), 
-          first_child_index(0), next_sibling_index(0) {
+        : type(t), token_index(token_idx), parent_index(INVALID_INDEX), 
+          first_child_index(INVALID_INDEX), next_sibling_index(INVALID_INDEX) {
         // Initialize union to zero
         integer_literal.value = 0;
     }
