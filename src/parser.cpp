@@ -354,6 +354,14 @@ void Parser::parse_binary_expression(uint8_t min_precedence) {
     
     while (!at_end()) {
         TokenType op_token = current_token().type;
+        
+        // Don't treat comma, semicolon, and closing brackets as binary operators
+        if (op_token == TokenType::COMMA || op_token == TokenType::SEMICOLON || 
+            op_token == TokenType::RBRACKET || op_token == TokenType::RPAREN || 
+            op_token == TokenType::RBRACE) {
+            break;
+        }
+        
         uint8_t precedence = get_precedence(op_token);
         
         if (precedence < min_precedence) {
@@ -513,10 +521,7 @@ void Parser::parse_primary() {
 }
 
 void Parser::parse_matrix_literal() {
-    std::cout << "[parse_matrix_literal] start\n";
-
     advance(); // consume '['
-    std::cout << "[parse_matrix_literal] consumed '[' token\n";
 
     uint32_t matrix_node = create_node(NodeType::MATRIX_LITERAL);
     std::vector<uint32_t> elements;
@@ -526,11 +531,8 @@ void Parser::parse_matrix_literal() {
         bool parsing_rows = true;
         while (parsing_rows) {
             uint32_t row_cols = 0;
-            std::cout << "[parse_matrix_literal] parsing new row\n";
 
             do {
-                std::cout << "  [parse_matrix_literal] current token type: " << static_cast<int>(current_token().type) << " value: '" << current_token().value << "'\n";
-
                 if (check(TokenType::RBRACKET)) {
                     error_at_current("Unexpected ']' inside matrix row");
                     return;
@@ -547,28 +549,22 @@ void Parser::parse_matrix_literal() {
                 ctx.node_stack.pop_back();
                 row_cols++;
 
-                std::cout << "  [parse_matrix_literal] parsed element, row_cols=" << row_cols << "\n";
-
             } while (match(TokenType::COMMA));
 
             if (rows == 0) {
                 cols = row_cols;
-                std::cout << "  [parse_matrix_literal] first row columns = " << cols << "\n";
             } else if (row_cols != cols) {
                 error_at_current("Inconsistent matrix row lengths");
                 return;
             }
 
             rows++;
-            std::cout << "  [parse_matrix_literal] rows so far: " << rows << "\n";
 
             if (match(TokenType::SEMICOLON)) {
-                std::cout << "  [parse_matrix_literal] found ';', continuing to next row\n";
                 // Continue parsing next row
                 continue;
             } else {
                 parsing_rows = false;
-                std::cout << "  [parse_matrix_literal] no more rows\n";
             }
         }
     }
@@ -577,8 +573,6 @@ void Parser::parse_matrix_literal() {
         error_at_current("Expected ']' after matrix literal");
         return;
     }
-
-    std::cout << "[parse_matrix_literal] found closing ']'\n";
 
     ctx.nodes[matrix_node].matrix_literal.rows = rows;
     ctx.nodes[matrix_node].matrix_literal.cols = cols;
@@ -592,8 +586,6 @@ void Parser::parse_matrix_literal() {
     }
 
     ctx.node_stack.push_back(matrix_node);
-
-    std::cout << "[parse_matrix_literal] done\n";
 }
 
 
