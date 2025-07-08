@@ -223,7 +223,6 @@ int main() {
     benchmark_parser_performance();
     
     std::cout << "\n Parser testing completed!\n";
-    std::cout << "✨ Features: Flat AST, O(1) allocations, iterative parsing, engineering optimizations\n";
     
     return 0;
 }
