@@ -21,15 +21,8 @@ product = matrix mult result
         
         std::cout << "Tokens generated: " << tokens.size() << "\n";
         
-        // Debug: Print tokens for matrix line
-        std::cout << "Debug - All tokens:\n";
-        for (size_t i = 0; i < tokens.size(); i++) {
-            std::cout << "  " << i << ": " << static_cast<int>(tokens[i].type) 
-                      << " '" << tokens[i].value << "' (line " << tokens[i].line << ")\n";
-        }
-        
         Dakota::Parser parser(tokens);
-        uint32_t root = parser.parse();
+        parser.parse();
         
         if (parser.has_error()) {
             std::cout << " Parse error: " << parser.get_error() << "\n";
@@ -215,7 +208,6 @@ void benchmark_parser_performance() {
 
 int main() {
     std::cout << "Dakota Parser\n";
-    
     test_basic_parsing();
     test_matrix_operations();
     test_control_flow();

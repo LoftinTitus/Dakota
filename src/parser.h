@@ -401,6 +401,7 @@ private:
     UnaryOpType token_to_unary_op(TokenType token_type) const;
     uint8_t get_precedence(TokenType token_type) const;
     bool is_right_associative(TokenType token_type) const;
+    bool is_binary_operator(TokenType token_type) const;
     
     // Engineering-specific optimizations
     void optimize_matrix_operations();

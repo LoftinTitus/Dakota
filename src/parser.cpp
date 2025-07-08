@@ -242,11 +242,12 @@ uint32_t Parser::parse() {
 }
 
 void Parser::parse_program() {
+    // Skip any leading newlines
+    while (!at_end() && match(TokenType::NEWLINE)) {
+        // continue skipping
+    }
+    
     while (!at_end()) {
-        if (match(TokenType::NEWLINE)) {
-            continue; // Skip empty lines
-        }
-        
         size_t start_token = ctx.current_token;
         
         try {
@@ -268,6 +269,11 @@ void Parser::parse_program() {
         // If there was an error, don't reset it here - let it propagate
         if (ctx.has_error) {
             break; // Stop parsing on error
+        }
+        
+        // Skip any trailing newlines after each statement
+        while (!at_end() && match(TokenType::NEWLINE)) {
+            // continue skipping
         }
     }
 }
@@ -355,10 +361,15 @@ void Parser::parse_binary_expression(uint8_t min_precedence) {
     while (!at_end()) {
         TokenType op_token = current_token().type;
         
-        // Don't treat comma, semicolon, and closing brackets as binary operators
+        // Don't treat comma, semicolon, closing brackets, and newlines as binary operators
         if (op_token == TokenType::COMMA || op_token == TokenType::SEMICOLON || 
             op_token == TokenType::RBRACKET || op_token == TokenType::RPAREN || 
-            op_token == TokenType::RBRACE) {
+            op_token == TokenType::RBRACE || op_token == TokenType::NEWLINE) {
+            break;
+        }
+        
+        // Check if this token is actually a binary operator
+        if (!is_binary_operator(op_token)) {
             break;
         }
         
@@ -1030,6 +1041,28 @@ std::vector<uint32_t> Parser::find_function_calls() const {
     }
     
     return result;
+}
+
+bool Parser::is_binary_operator(TokenType token_type) const {
+    switch (token_type) {
+        case TokenType::PLUS:
+        case TokenType::MINUS:
+        case TokenType::MULTIPLY:
+        case TokenType::DIVIDE:
+        case TokenType::POWER:
+        case TokenType::MATMUL:
+        case TokenType::EQUAL:
+        case TokenType::NOT_EQUAL:
+        case TokenType::LESS:
+        case TokenType::LESS_EQUAL:
+        case TokenType::GREATER:
+        case TokenType::GREATER_EQUAL:
+        case TokenType::AND:
+        case TokenType::OR:
+            return true;
+        default:
+            return false;
+    }
 }
 
 } // namespace Dakota
