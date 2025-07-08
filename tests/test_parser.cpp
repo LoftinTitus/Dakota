@@ -25,9 +25,9 @@ product = matrix mult result
         uint32_t root = parser.parse();
         
         if (parser.has_error()) {
-            std::cout << "❌ Parse error: " << parser.get_error() << "\n";
+            std::cout << " Parse error: " << parser.get_error() << "\n";
         } else {
-            std::cout << "✅ Parsing successful!\n";
+            std::cout << " Parsing successful!\n";
             std::cout << "AST nodes: " << parser.get_nodes().size() << "\n";
             std::cout << "Memory usage: " << parser.get_memory_usage() << " bytes\n";
             
@@ -36,7 +36,7 @@ product = matrix mult result
         }
         
     } catch (const std::exception& e) {
-        std::cout << "❌ Exception: " << e.what() << "\n";
+        std::cout << "  Exception: " << e.what() << "\n";
     }
 }
 
@@ -58,9 +58,9 @@ result = C ** 2
         parser.parse();
         
         if (parser.has_error()) {
-            std::cout << "❌ Parse error: " << parser.get_error() << "\n";
+            std::cout << "  Parse error: " << parser.get_error() << "\n";
         } else {
-            std::cout << "✅ Matrix parsing successful!\n";
+            std::cout << "   Matrix parsing successful!\n";
             
             auto matrix_ops = parser.find_matrix_multiplications();
             std::cout << "Matrix multiplications found: " << matrix_ops.size() << "\n";
@@ -71,7 +71,7 @@ result = C ** 2
         }
         
     } catch (const std::exception& e) {
-        std::cout << "❌ Exception: " << e.what() << "\n";
+        std::cout << "  Exception: " << e.what() << "\n";
     }
 }
 
@@ -101,14 +101,14 @@ while i < 10:
         parser.parse();
         
         if (parser.has_error()) {
-            std::cout << "❌ Parse error: " << parser.get_error() << "\n";
+            std::cout << "  Parse error: " << parser.get_error() << "\n";
         } else {
-            std::cout << "✅ Control flow parsing successful!\n";
+            std::cout << "   Control flow parsing successful!\n";
             std::cout << "AST nodes: " << parser.get_nodes().size() << "\n";
         }
         
     } catch (const std::exception& e) {
-        std::cout << "❌ Exception: " << e.what() << "\n";
+        std::cout << "  Exception: " << e.what() << "\n";
     }
 }
 
@@ -138,16 +138,16 @@ fib = fibonacci(10)
         parser.parse();
         
         if (parser.has_error()) {
-            std::cout << "❌ Parse error: " << parser.get_error() << "\n";
+            std::cout << "  Parse error: " << parser.get_error() << "\n";
         } else {
-            std::cout << "✅ Function parsing successful!\n";
+            std::cout << "   Function parsing successful!\n";
             
             auto func_calls = parser.find_function_calls();
             std::cout << "Function calls found: " << func_calls.size() << "\n";
         }
         
     } catch (const std::exception& e) {
-        std::cout << "❌ Exception: " << e.what() << "\n";
+        std::cout << "  Exception: " << e.what() << "\n";
     }
 }
 
@@ -181,13 +181,13 @@ void benchmark_parser_performance() {
         auto parse_end = std::chrono::high_resolution_clock::now();
         
         if (parser.has_error()) {
-            std::cout << "❌ Parse error: " << parser.get_error() << "\n";
+            std::cout << "  Parse error: " << parser.get_error() << "\n";
         } else {
             auto lex_time = std::chrono::duration_cast<std::chrono::microseconds>(lex_end - start);
             auto parse_time = std::chrono::duration_cast<std::chrono::microseconds>(parse_end - lex_end);
             auto total_time = std::chrono::duration_cast<std::chrono::microseconds>(parse_end - start);
             
-            std::cout << "✅ Performance benchmark completed!\n";
+            std::cout << "   Performance benchmark completed!\n";
             std::cout << "Lexing time: " << lex_time.count() << " μs\n";
             std::cout << "Parsing time: " << parse_time.count() << " μs\n";
             std::cout << "Total time: " << total_time.count() << " μs\n";
@@ -202,7 +202,7 @@ void benchmark_parser_performance() {
         }
         
     } catch (const std::exception& e) {
-        std::cout << "❌ Exception: " << e.what() << "\n";
+        std::cout << "  Exception: " << e.what() << "\n";
     }
 }
 
