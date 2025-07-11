@@ -423,8 +423,8 @@ std::vector<Token> Lexer::tokenize() {
     bool at_line_start = true;
     
     while (current_char != '\0') {
-        // Handle indentation at the start of lines
-        if (at_line_start && (current_char == ' ' || current_char == '\t')) {
+        // Handle indentation at the start of lines (including lines with no indentation)
+        if (at_line_start) {
             auto indent_tokens = handle_indentation();
             tokens.insert(tokens.end(), indent_tokens.begin(), indent_tokens.end());
             at_line_start = false;

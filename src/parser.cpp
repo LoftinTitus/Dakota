@@ -247,7 +247,17 @@ void Parser::parse_program() {
         // continue skipping
     }
     
+    // Add loop detection to prevent infinite loops
+    size_t loop_detection_counter = 0;
+    const size_t MAX_PROGRAM_ITERATIONS = 50000; // Reasonable limit for program statements
+    
     while (!at_end()) {
+        // Check for infinite loop
+        if (++loop_detection_counter > MAX_PROGRAM_ITERATIONS) {
+            error_at_current("Infinite loop detected in program parsing - too many iterations");
+            break;
+        }
+        
         size_t start_token = ctx.current_token;
         
         try {
@@ -802,22 +812,53 @@ void Parser::parse_function_definition() {
 void Parser::parse_block() {
     if (!match(TokenType::NEWLINE)) {
         error_at_current("Expected newline after ':'");
+        return;
     }
     
     if (!match(TokenType::INDENT)) {
         error_at_current("Expected indentation for block");
+        return;
     }
     
     uint32_t block_node = create_node(NodeType::BLOCK);
     std::vector<uint32_t> statements;
     
+    // Add loop detection to prevent infinite loops
+    size_t loop_detection_counter = 0;
+    const size_t MAX_LOOP_ITERATIONS = 10000; // Reasonable limit
+    
     while (!check(TokenType::DEDENT) && !at_end()) {
+        // Check for infinite loop
+        if (++loop_detection_counter > MAX_LOOP_ITERATIONS) {
+            error_at_current("Infinite loop detected in block parsing - too many iterations");
+            break;
+        }
+        
         if (match(TokenType::NEWLINE)) {
             continue;
         }
         
+        size_t start_token = ctx.current_token; // Track starting position
         size_t stmt_start = ctx.nodes.size();
-        parse_statement();
+        
+        try {
+            parse_statement();
+        } catch (const std::exception& e) {
+            error_at_current(std::string("Block statement parse error: ") + e.what());
+            break; // Exit the loop on error
+        }
+        
+        // Fail fast: if we didn't advance, we're stuck
+        if (ctx.current_token == start_token && !at_end()) {
+            error_at_current("Unexpected token in block");
+            advance(); // Force advancement to prevent infinite loop
+            continue;
+        }
+        
+        // If there was a parse error, break out
+        if (ctx.has_error) {
+            break;
+        }
         
         // Add any new statements to the block
         for (size_t i = stmt_start; i < ctx.nodes.size(); i++) {
@@ -830,6 +871,7 @@ void Parser::parse_block() {
     
     if (!match(TokenType::DEDENT)) {
         error_at_current("Expected dedentation after block");
+        return;
     }
     
     ctx.nodes[block_node].block.statement_count = static_cast<uint32_t>(statements.size());
