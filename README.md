@@ -36,7 +36,7 @@ B = A.T + A
 print(y)
 ```
 
-# TODO List for EngLang
+# TODO List for Dakota
 
 ## Language Design
 - [X] Finalize core syntax (variables, math, matrix operations)
@@ -44,9 +44,8 @@ print(y)
 - [X] Define standard library scope (math, linear algebra)
 
 ##  Compiler Development
-- [ ] Set up C++ project with CMake
 - [X] Implement lexer (tokenizer)
-- [ ] Build parser and AST structures
+- [X] Build parser and AST structures
 - [ ] Integrate LLVM for code generation
 - [ ] Wrap Eigen or BLAS/LAPACK for matrix operations
 
@@ -56,7 +55,7 @@ print(y)
 - [ ] Validate matrix operations and math functionality
 
 ## Documentation
-- [ ] Write `docs/syntax.md` with language grammar and examples
+- [X] Write `docs/syntax.md` with language grammar and examples
 - [ ] Document build instructions
 - [ ] Draft language philosophy and vision
 
