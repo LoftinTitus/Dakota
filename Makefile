@@ -85,7 +85,7 @@ $(INDENT_TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/test_indentation.o | $(BINDIR
 $(TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/test_lexer.o | $(BINDIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
-$(TARGET): $(filter-out $(OBJDIR)/test_lexer.o, $(OBJECTS)) | $(BINDIR)
+$(TARGET): $(filter-out $(OBJDIR)/test_lexer.o $(OBJDIR)/test_indentation.o $(OBJDIR)/test_integer_indent.o $(OBJDIR)/benchmark_comments.o $(OBJDIR)/benchmark_optimized.o $(OBJDIR)/test_parser.o $(OBJDIR)/test_matrix_parsing.o $(OBJDIR)/test_matrix_debug.o $(OBJDIR)/test_matrix_isolation.o $(OBJDIR)/test_matrix_final.o, $(OBJECTS)) | $(BINDIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
@@ -103,6 +103,8 @@ clean:
 # Dependencies
 $(OBJDIR)/lexer.o: $(SRCDIR)/lexer.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/parser.o: $(SRCDIR)/parser.cpp $(SRCDIR)/parser.h $(SRCDIR)/lexer.h
+$(OBJDIR)/interpreter.o: $(SRCDIR)/interpreter.cpp $(SRCDIR)/interpreter.h $(SRCDIR)/parser.h $(SRCDIR)/lexer.h
+$(OBJDIR)/main.o: $(SRCDIR)/main.cpp $(SRCDIR)/interpreter.h $(SRCDIR)/parser.h $(SRCDIR)/lexer.h
 $(OBJDIR)/test_lexer.o: $(SRCDIR)/test_lexer.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/test_indentation.o: $(SRCDIR)/test_indentation.cpp $(SRCDIR)/lexer.h
 $(OBJDIR)/test_integer_indent.o: $(SRCDIR)/test_integer_indent.cpp $(SRCDIR)/lexer.h

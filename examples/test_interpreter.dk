@@ -1,0 +1,44 @@
+\ Simple Dakota program to test the interpreter
+
+\ Variable assignments
+x = 42
+y = 3.14
+name = "Dakota"
+flag = true
+
+\ Arithmetic operations
+result = x + y * 2
+print("x =", x)
+print("y =", y)
+print("result =", result)
+
+\ Matrix operations
+matrix = [1, 2; 3, 4]
+print("Matrix:")
+print(matrix)
+
+\ Matrix multiplication
+identity = [1, 0; 0, 1]
+product = matrix mult identity
+print("Matrix * Identity:")
+print(product)
+
+\ Matrix transpose
+transposed = matrix.T
+print("Matrix transposed:")
+print(transposed)
+
+\ Built-in functions
+print("sqrt(16) =", sqrt(16))
+print("abs(-5) =", abs(-5))
+print("sin(0) =", sin(0))
+
+\ String operations
+greeting = "Hello, " + name
+print(greeting)
+
+\ Boolean operations
+print("flag =", flag)
+print("not flag =", not flag)
+print("x > 40 =", x > 40)
+print("y <= 3 =", y <= 3)
