@@ -20,8 +20,9 @@ MATRIX_TEST_TARGET = $(BINDIR)/test_matrix_parsing
 MATRIX_DEBUG_TARGET = $(BINDIR)/test_matrix_debug
 MATRIX_ISOLATION_TARGET = $(BINDIR)/test_matrix_isolation
 MATRIX_FINAL_TARGET = $(BINDIR)/test_matrix_final
+INTERPRETER_TEST_TARGET = $(BINDIR)/test_interpreter
 
-.PHONY: all clean test test-indent test-integer-indent benchmark benchmark-optimized test-parser test-matrix test-matrix-debug test-matrix-isolation test-matrix-final
+.PHONY: all clean test test-indent test-integer-indent benchmark benchmark-optimized test-parser test-matrix test-matrix-debug test-matrix-isolation test-matrix-final test-interpreter
 
 all: $(TARGET)
 
@@ -55,6 +56,9 @@ test-matrix-isolation: $(MATRIX_ISOLATION_TARGET)
 test-matrix-final: $(MATRIX_FINAL_TARGET)
 	./$(MATRIX_FINAL_TARGET)
 
+test-interpreter: $(INTERPRETER_TEST_TARGET)
+	./$(INTERPRETER_TEST_TARGET)
+
 $(PARSER_TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/parser.o $(OBJDIR)/test_parser.o | $(BINDIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
@@ -68,6 +72,9 @@ $(MATRIX_ISOLATION_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/parser.o $(OBJDIR)/test_
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(MATRIX_FINAL_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/parser.o $(OBJDIR)/test_matrix_final.o | $(BINDIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+$(INTERPRETER_TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/parser.o $(OBJDIR)/interpreter.o $(OBJDIR)/test_interpreter.o | $(BINDIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(OPTIMIZED_BENCHMARK_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/benchmark_optimized.o | $(BINDIR)
@@ -85,7 +92,7 @@ $(INDENT_TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/test_indentation.o | $(BINDIR
 $(TEST_TARGET): $(OBJDIR)/lexer.o $(OBJDIR)/test_lexer.o | $(BINDIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
-$(TARGET): $(filter-out $(OBJDIR)/test_lexer.o $(OBJDIR)/test_indentation.o $(OBJDIR)/test_integer_indent.o $(OBJDIR)/benchmark_comments.o $(OBJDIR)/benchmark_optimized.o $(OBJDIR)/test_parser.o $(OBJDIR)/test_matrix_parsing.o $(OBJDIR)/test_matrix_debug.o $(OBJDIR)/test_matrix_isolation.o $(OBJDIR)/test_matrix_final.o, $(OBJECTS)) | $(BINDIR)
+$(TARGET): $(filter-out $(OBJDIR)/test_lexer.o $(OBJDIR)/test_indentation.o $(OBJDIR)/test_integer_indent.o $(OBJDIR)/benchmark_comments.o $(OBJDIR)/benchmark_optimized.o $(OBJDIR)/test_parser.o $(OBJDIR)/test_matrix_parsing.o $(OBJDIR)/test_matrix_debug.o $(OBJDIR)/test_matrix_isolation.o $(OBJDIR)/test_matrix_final.o $(OBJDIR)/test_interpreter.o, $(OBJECTS)) | $(BINDIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
@@ -124,3 +131,6 @@ $(OBJDIR)/test_matrix_isolation.o: tests/test_matrix_isolation.cpp $(SRCDIR)/par
 
 $(OBJDIR)/test_matrix_final.o: tests/test_matrix_final.cpp $(SRCDIR)/parser.h $(SRCDIR)/lexer.h
 	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -c tests/test_matrix_final.cpp -o $(OBJDIR)/test_matrix_final.o
+
+$(OBJDIR)/test_interpreter.o: tests/test_interpreter.cpp $(SRCDIR)/interpreter.h $(SRCDIR)/parser.h $(SRCDIR)/lexer.h
+	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -c tests/test_interpreter.cpp -o $(OBJDIR)/test_interpreter.o

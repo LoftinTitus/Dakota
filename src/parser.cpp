@@ -351,7 +351,11 @@ void Parser::parse_statement() {
     if (!ctx.node_stack.empty()) {
         uint32_t expr_node = ctx.node_stack.back();
         ctx.node_stack.pop_back();
+        // Set both expression_index and first_child_index for consistency
         ctx.nodes[expr_stmt_node].expression_statement.expression_index = expr_node;
+        ctx.nodes[expr_stmt_node].first_child_index = expr_node;
+        // Set parent relationship
+        ctx.nodes[expr_node].parent_index = expr_stmt_node;
         add_child(ROOT_NODE_INDEX, expr_stmt_node);
     } else {
         // If expression parsing failed and we have no nodes, advance to prevent infinite loop

@@ -160,6 +160,9 @@ public:
     static Value transpose(const std::vector<Value>& args);
     static Value determinant(const std::vector<Value>& args);
     static Value inverse(const std::vector<Value>& args);
+    
+    // Range function for iteration
+    static Value range(const std::vector<Value>& args);
 };
 
 // Return value exception for early returns

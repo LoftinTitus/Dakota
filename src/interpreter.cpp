@@ -754,6 +754,67 @@ Value BuiltinFunctions::inverse(const std::vector<Value>& args) {
     return args[0].inverse();
 }
 
+Value BuiltinFunctions::range(const std::vector<Value>& args) {
+    if (args.size() == 1) {
+        // range(n) -> 0 to n-1
+        if (!args[0].is_integer()) {
+            throw RuntimeError("range() argument must be integer");
+        }
+        int64_t end = args[0].as_integer();
+        if (end < 0) {
+            throw RuntimeError("range() argument must be non-negative");
+        }
+        
+        // Create a matrix where each row contains one integer
+        std::vector<std::vector<double>> result;
+        for (int64_t i = 0; i < end; ++i) {
+            result.push_back({static_cast<double>(i)});
+        }
+        return Value(result);
+    } else if (args.size() == 2) {
+        // range(start, end) -> start to end-1
+        if (!args[0].is_integer() || !args[1].is_integer()) {
+            throw RuntimeError("range() arguments must be integers");
+        }
+        int64_t start = args[0].as_integer();
+        int64_t end = args[1].as_integer();
+        
+        std::vector<std::vector<double>> result;
+        if (start <= end) {
+            for (int64_t i = start; i < end; ++i) {
+                result.push_back({static_cast<double>(i)});
+            }
+        }
+        return Value(result);
+    } else if (args.size() == 3) {
+        // range(start, end, step) -> start to end-1 by step
+        if (!args[0].is_integer() || !args[1].is_integer() || !args[2].is_integer()) {
+            throw RuntimeError("range() arguments must be integers");
+        }
+        int64_t start = args[0].as_integer();
+        int64_t end = args[1].as_integer();
+        int64_t step = args[2].as_integer();
+        
+        if (step == 0) {
+            throw RuntimeError("range() step argument cannot be zero");
+        }
+        
+        std::vector<std::vector<double>> result;
+        if (step > 0 && start < end) {
+            for (int64_t i = start; i < end; i += step) {
+                result.push_back({static_cast<double>(i)});
+            }
+        } else if (step < 0 && start > end) {
+            for (int64_t i = start; i > end; i += step) {
+                result.push_back({static_cast<double>(i)});
+            }
+        }
+        return Value(result);
+    } else {
+        throw RuntimeError("range() takes 1, 2, or 3 arguments");
+    }
+}
+
 // Interpreter implementation
 
 Interpreter::Interpreter(const Parser& parser) 
@@ -780,40 +841,34 @@ void Interpreter::register_builtin_functions() {
     builtin_functions_["transpose"] = BuiltinFunctions::transpose;
     builtin_functions_["determinant"] = BuiltinFunctions::determinant;
     builtin_functions_["inverse"] = BuiltinFunctions::inverse;
+    builtin_functions_["range"] = BuiltinFunctions::range;
 }
 
 void Interpreter::interpret() {
-    if (parser_.has_error()) {
-        throw RuntimeError("Cannot interpret: parser has errors");
-    }
-    
-    const auto& nodes = parser_.get_nodes();
-    if (nodes.empty()) {
-        return;
-    }
-    
-    std::cout << "DEBUG: Starting interpretation with " << nodes.size() << " nodes\n";
-    
     try {
-        // Execute the program starting from the root node
-        std::cout << "DEBUG: Executing statement at index 0\n";
-        execute_statement(0);
-        std::cout << "DEBUG: Interpretation completed\n";
-    } catch (const ReturnException& ret) {
-        // Return from main program - this is fine
-        std::cout << "DEBUG: Return exception caught\n";
-    } catch (const RuntimeError& e) {
-        print_runtime_error(e);
-        throw;
+        // Execute the root program node
+        if (!parser_.get_nodes().empty()) {
+            // Start from node 0 which should be the root
+            execute_statement(0);
+        }
+    } catch (const RuntimeError& error) {
+        print_runtime_error(error);
+    } catch (const ReturnException&) {
+        // Return at top level - just ignore
     }
 }
 
 Value Interpreter::interpret_expression(uint32_t node_index) {
-    return evaluate_node(node_index);
+    try {
+        return evaluate_node(node_index);
+    } catch (const RuntimeError& error) {
+        print_runtime_error(error);
+        return Value(); // Return None on error
+    }
 }
 
 Value Interpreter::evaluate_node(uint32_t node_index) {
-    if (node_index == INVALID_INDEX || node_index >= parser_.get_nodes().size()) {
+    if (node_index == 0 || node_index >= parser_.get_nodes().size()) {
         throw RuntimeError("Invalid node index");
     }
     
@@ -822,42 +877,30 @@ Value Interpreter::evaluate_node(uint32_t node_index) {
     switch (node.type) {
         case NodeType::INTEGER_LITERAL:
             return Value(node.integer_literal.value);
-            
         case NodeType::FLOAT_LITERAL:
             return Value(node.float_literal.value);
-            
         case NodeType::STRING_LITERAL:
             return Value(get_node_string(node.string_literal.string_index));
-            
         case NodeType::BOOLEAN_LITERAL:
             return Value(node.boolean_literal.value);
-            
         case NodeType::IDENTIFIER:
             return evaluate_identifier(node);
-            
         case NodeType::BINARY_OP:
             return evaluate_binary_op(node);
-            
         case NodeType::UNARY_OP:
             return evaluate_unary_op(node);
-            
         case NodeType::ASSIGNMENT:
             return evaluate_assignment(node);
-            
         case NodeType::FUNCTION_CALL:
             return evaluate_function_call(node);
-            
         case NodeType::MATRIX_LITERAL:
             return evaluate_matrix_literal(node);
-            
         case NodeType::MATRIX_ACCESS:
             return evaluate_matrix_access(node);
-            
         case NodeType::MEMBER_ACCESS:
             return evaluate_member_access(node);
-            
         default:
-            throw RuntimeError("Cannot evaluate node type as expression");
+            throw RuntimeError("Cannot evaluate node type");
     }
 }
 
@@ -963,7 +1006,6 @@ Value Interpreter::evaluate_function_call(const ASTNode& node) {
         auto func_env = std::make_shared<Environment>(func.closure);
         
         // Bind parameters to arguments
-        // Note: Parameters shadow any global variables with the same name
         for (size_t i = 0; i < func.parameters.size(); ++i) {
             func_env->define(func.parameters[i], args[i]);
         }
@@ -988,124 +1030,122 @@ Value Interpreter::evaluate_function_call(const ASTNode& node) {
 Value Interpreter::evaluate_matrix_literal(const ASTNode& node) {
     std::vector<std::vector<double>> matrix;
     
-    if (node.matrix_literal.is_empty) {
-        return Value(matrix);
-    }
-    
-    // Get all element nodes
+    // Use elements_start_index instead of first_child_index for matrix literals
     std::vector<uint32_t> element_indices = get_child_indices(node.matrix_literal.elements_start_index);
     
-    size_t rows = node.matrix_literal.rows;
-    size_t cols = node.matrix_literal.cols;
-    
-    matrix.resize(rows);
-    for (size_t i = 0; i < rows; ++i) {
-        matrix[i].resize(cols);
+    // Sanity check: verify matrix dimensions match element count
+    uint32_t expected_elements = node.matrix_literal.rows * node.matrix_literal.cols;
+    if (expected_elements != element_indices.size()) {
+        throw RuntimeError("Matrix size mismatch: expected " + std::to_string(expected_elements) + 
+                          " elements, got " + std::to_string(element_indices.size()));
     }
     
-    // Fill matrix with values
-    for (size_t i = 0; i < element_indices.size() && i < rows * cols; ++i) {
-        Value element_value = evaluate_node(element_indices[i]);
-        if (!element_value.is_numeric()) {
-            throw RuntimeError("Matrix elements must be numeric");
+    // Process elements row by row
+    size_t element_idx = 0;
+    for (uint32_t row = 0; row < node.matrix_literal.rows; ++row) {
+        std::vector<double> matrix_row;
+        for (uint32_t col = 0; col < node.matrix_literal.cols; ++col) {
+            if (element_idx >= element_indices.size()) {
+                throw RuntimeError("Not enough elements for matrix");
+            }
+            
+            Value element_value = evaluate_node(element_indices[element_idx]);
+            if (!element_value.is_numeric()) {
+                throw RuntimeError("Matrix elements must be numeric");
+            }
+            matrix_row.push_back(element_value.to_double());
+            element_idx++;
         }
-        
-        size_t row = i / cols;
-        size_t col = i % cols;
-        matrix[row][col] = element_value.to_double();
+        matrix.push_back(matrix_row);
     }
     
     return Value(matrix);
 }
 
 Value Interpreter::evaluate_matrix_access(const ASTNode& node) {
-    Value matrix_val = evaluate_node(node.matrix_access.object_index);
-    Value index_val = evaluate_node(node.matrix_access.index_index);
+    Value matrix_value = evaluate_node(node.array_access.object_index);
+    Value index_value = evaluate_node(node.array_access.index_index);
     
-    if (!matrix_val.is_matrix()) {
+    if (!matrix_value.is_matrix()) {
         throw RuntimeError("Cannot index non-matrix value");
     }
     
-    if (!index_val.is_integer()) {
-        throw RuntimeError("Matrix index must be an integer");
+    if (!index_value.is_integer()) {
+        throw RuntimeError("Matrix index must be integer");
     }
     
-    const auto& matrix = matrix_val.as_matrix();
-    int64_t index = index_val.as_integer();
+    const auto& matrix = matrix_value.as_matrix();
+    int64_t index = index_value.as_integer();
     
     if (index < 0 || static_cast<size_t>(index) >= matrix.size()) {
         throw RuntimeError("Matrix index out of bounds");
     }
     
-    // Return the row as a new matrix (vector)
-    std::vector<std::vector<double>> row_matrix;
-    row_matrix.push_back(matrix[index]);
-    return Value(row_matrix);
+    // Return the row as a new matrix
+    std::vector<std::vector<double>> result = {matrix[index]};
+    return Value(result);
 }
 
 Value Interpreter::evaluate_member_access(const ASTNode& node) {
-    Value object = evaluate_node(node.member_access.object_index);
+    Value object_value = evaluate_node(node.member_access.object_index);
     std::string member_name = get_node_string(node.member_access.member_name_index);
     
-    if (object.is_matrix()) {
-        if (member_name == "T") {
-            return object.transpose();
-        } else if (member_name == "d") {
-            return object.determinant();
-        } else if (member_name == "I") {
-            return object.inverse();
-        }
+    if (!object_value.is_matrix()) {
+        throw RuntimeError("Member access only supported on matrices");
     }
     
-    throw RuntimeError("Unknown member '" + member_name + "' for this type");
+    if (member_name == "T") {
+        return object_value.transpose();
+    } else if (member_name == "d") {
+        return object_value.determinant();
+    } else if (member_name == "I") {
+        return object_value.inverse();
+    }
+    
+    throw RuntimeError("Unknown matrix member: " + member_name);
 }
 
 void Interpreter::execute_statement(uint32_t node_index) {
-    if (node_index == INVALID_INDEX || node_index >= parser_.get_nodes().size()) {
+    if (node_index >= parser_.get_nodes().size()) {
         return;
     }
     
     const ASTNode& node = parser_.get_nodes()[node_index];
     
     switch (node.type) {
-        case NodeType::PROGRAM:
-        case NodeType::BLOCK:
-            execute_block(node_index);
-            break;
-            
         case NodeType::EXPRESSION_STATEMENT:
-            // Execute the child expression and discard result
-            if (node.first_child_index != INVALID_INDEX) {
+            // Use first_child_index instead of expression_index field
+            if (node.first_child_index != INVALID_INDEX && 
+                node.first_child_index < parser_.get_nodes().size()) {
                 evaluate_node(node.first_child_index);
             }
             break;
-            
-        case NodeType::IF_STATEMENT:
-            execute_if_statement(node);
-            break;
-            
-        case NodeType::WHILE_STATEMENT:
-            execute_while_statement(node);
-            break;
-            
-        case NodeType::FOR_STATEMENT:
-            execute_for_statement(node);
-            break;
-            
-        case NodeType::FUNCTION_DEF:
-            execute_function_def(node);
-            break;
-            
-        case NodeType::RETURN_STATEMENT:
-            execute_return_statement(node);
-            break;
-            
         case NodeType::ASSIGNMENT:
             evaluate_assignment(node);
             break;
-            
+        case NodeType::IF_STATEMENT:
+            execute_if_statement(node);
+            break;
+        case NodeType::WHILE_STATEMENT:
+            execute_while_statement(node);
+            break;
+        case NodeType::FOR_STATEMENT:
+            execute_for_statement(node);
+            break;
+        case NodeType::FUNCTION_DEF:
+            execute_function_def(node);
+            break;
+        case NodeType::RETURN_STATEMENT:
+            execute_return_statement(node);
+            break;
+        case NodeType::BLOCK:
+        case NodeType::PROGRAM:
+            execute_block(node_index);
+            break;
         default:
-            throw RuntimeError("Unknown or unsupported statement node type: " + std::to_string(static_cast<int>(node.type)));
+            // For other types, try to evaluate as expression
+            evaluate_node(node_index);
+            break;
     }
 }
 
@@ -1114,7 +1154,7 @@ void Interpreter::execute_if_statement(const ASTNode& node) {
     
     if (condition.is_truthy()) {
         execute_statement(node.if_statement.then_block_index);
-    } else if (node.if_statement.else_block_index != INVALID_INDEX) {
+    } else if (node.if_statement.else_block_index != 0) {
         execute_statement(node.if_statement.else_block_index);
     }
 }
@@ -1125,15 +1165,44 @@ void Interpreter::execute_while_statement(const ASTNode& node) {
         if (!condition.is_truthy()) {
             break;
         }
-        
         execute_statement(node.while_statement.body_index);
     }
 }
 
-void Interpreter::execute_for_statement(const ASTNode& /* node */) {
-    // Simplified for loop implementation
-    // In a full implementation, you'd handle iterables properly
-    throw RuntimeError("For loops not yet fully implemented");
+void Interpreter::execute_for_statement(const ASTNode& node) {
+    // Get the loop variable name
+    const ASTNode& var_node = parser_.get_nodes()[node.for_statement.variable_index];
+    if (var_node.type != NodeType::IDENTIFIER) {
+        throw RuntimeError("For loop variable must be an identifier");
+    }
+    std::string var_name = get_node_string(var_node.identifier.name_index);
+    
+    // Evaluate the iterable expression
+    Value iterable = evaluate_node(node.for_statement.iterable_index);
+    
+    // Create a new scope for the loop
+    auto loop_env = std::make_shared<Environment>(current_env_);
+    auto previous_env = current_env_;
+    current_env_ = loop_env;
+    
+    try {
+        if (iterable.is_matrix()) {
+            // Iterate over matrix rows
+            const auto& matrix = iterable.as_matrix();
+            for (const auto& row : matrix) {
+                // Create a matrix with just this row
+                std::vector<std::vector<double>> single_row = {row};
+                current_env_->assign(var_name, Value(single_row));
+                execute_statement(node.for_statement.body_index);
+            }
+        } else {
+            throw RuntimeError("For loop iterable must be a matrix or range");
+        }
+        current_env_ = previous_env;
+    } catch (...) {
+        current_env_ = previous_env;
+        throw;
+    }
 }
 
 void Interpreter::execute_function_def(const ASTNode& node) {
@@ -1158,7 +1227,7 @@ void Interpreter::execute_function_def(const ASTNode& node) {
 
 void Interpreter::execute_return_statement(const ASTNode& node) {
     Value return_value;
-    if (node.return_statement.value_index != INVALID_INDEX) {
+    if (node.return_statement.value_index != 0) {
         return_value = evaluate_node(node.return_statement.value_index);
     }
     
@@ -1182,17 +1251,12 @@ std::string Interpreter::get_node_string(uint32_t string_index) const {
 
 std::vector<uint32_t> Interpreter::get_child_indices(uint32_t start_index) const {
     std::vector<uint32_t> indices;
+    if (start_index == 0) return indices;
     
-    if (start_index == INVALID_INDEX) {
-        return indices;
-    }
-    
-    const auto& nodes = parser_.get_nodes();
     uint32_t current = start_index;
-    
-    while (current != INVALID_INDEX && current < nodes.size()) {
+    while (current != 0 && current < parser_.get_nodes().size()) {
         indices.push_back(current);
-        current = nodes[current].next_sibling_index;
+        current = parser_.get_nodes()[current].next_sibling_index;
     }
     
     return indices;
