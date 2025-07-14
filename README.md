@@ -46,18 +46,16 @@ print(y)
 ##  Compiler Development
 - [X] Implement lexer (tokenizer)
 - [X] Build parser and AST structures
-- [ ] Integrate LLVM for code generation
-- [ ] Wrap Eigen or BLAS/LAPACK for matrix operations
+- [X] Integrate LLVM for code generation
 
 ## Testing & Examples
 - [ ] Write basic example programs in `examples/`
-- [ ] Create unit tests for compiler components
-- [ ] Validate matrix operations and math functionality
+- [X] Create unit tests for compiler components
+- [X] Validate matrix operations and math functionality
 
 ## Documentation
 - [X] Write `docs/syntax.md` with language grammar and examples
 - [ ] Document build instructions
-- [ ] Draft language philosophy and vision
 
 ## Nice to Have
 - [ ] Units of measurement system (e.g., `5 * m`, unit-safe math)
