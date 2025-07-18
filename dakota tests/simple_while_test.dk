@@ -1,0 +1,15 @@
+print("Testing simple while loop")
+x = 0
+print("Initial x:")
+print(x)
+
+while x < 2:
+    print("In loop, x is:")
+    print(x)
+    x = x + 1
+    print("After increment, x is:")
+    print(x)
+
+print("Final x:")
+print(x)
+print("Done")

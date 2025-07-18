@@ -1,0 +1,23 @@
+print("Before loop")
+x = 0
+print("x initial value:")
+print(x)
+
+print("Testing assignment outside loop")
+x = x + 1
+print("x after manual increment:")
+print(x)
+
+print("Starting while loop")
+count = 0
+while count < 2:
+    print("Loop iteration")
+    print("count value:")
+    print(count)
+    count = count + 1
+    print("count after increment:")
+    print(count)
+
+print("Loop finished")
+print("Final count:")
+print(count)

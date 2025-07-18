@@ -1,0 +1,10 @@
+x = 0
+if x < 3:
+    print("x is less than 3")
+    x = x + 1
+    print("x after increment:")
+    print(x)
+    if x < 3:
+        print("x is still less than 3")
+    else:
+        print("x is now >= 3")

@@ -1,0 +1,6 @@
+x = 1
+if x < 3:
+    print("First condition true")
+
+if x < 3:
+    print("Second condition true")

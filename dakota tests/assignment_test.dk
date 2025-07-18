@@ -1,0 +1,10 @@
+print("Testing variable assignment")
+x = 0
+print(x)
+
+x = x + 1
+print(x)
+
+print("Testing comparison")
+result = x < 3
+print(result)

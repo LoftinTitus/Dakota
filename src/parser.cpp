@@ -117,6 +117,12 @@ bool Parser::check(TokenType type) const {
 uint32_t Parser::create_node(NodeType type) {
     uint32_t index = static_cast<uint32_t>(ctx.nodes.size());
     ctx.nodes.emplace_back(type, ctx.current_token);
+    
+    // Debug output for node 12
+    if (index == 12) {
+        std::cerr << "DEBUG: Created node 12 with type " << static_cast<int>(type) << std::endl;
+    }
+    
     return index;
 }
 
@@ -130,6 +136,15 @@ void Parser::add_child(uint32_t parent_index, uint32_t child_index) {
     
     child.parent_index = parent_index;
     
+    // Debug output for all ROOT additions and node 12
+    if (parent_index == 0 || child_index == 12 || parent_index == 12) {
+        std::cerr << "DEBUG: add_child parent=" << parent_index << " child=" << child_index;
+        if (child_index < ctx.nodes.size()) {
+            std::cerr << " (child_type=" << static_cast<int>(ctx.nodes[child_index].type) << ")";
+        }
+        std::cerr << std::endl;
+    }
+    
     if (parent.first_child_index == INVALID_INDEX) {
         parent.first_child_index = child_index;
     } else {
@@ -139,6 +154,11 @@ void Parser::add_child(uint32_t parent_index, uint32_t child_index) {
             sibling_index = ctx.nodes[sibling_index].next_sibling_index;
         }
         ctx.nodes[sibling_index].next_sibling_index = child_index;
+        
+        // Debug output for node 12
+        if (child_index == 12 || sibling_index == 12) {
+            std::cerr << "DEBUG: sibling link " << sibling_index << " -> " << child_index << std::endl;
+        }
     }
 }
 
@@ -259,6 +279,7 @@ void Parser::parse_program() {
         }
         
         size_t start_token = ctx.current_token;
+        size_t stack_size_before = ctx.node_stack.size();
         
         try {
             parse_statement();
@@ -279,6 +300,19 @@ void Parser::parse_program() {
         // If there was an error, don't reset it here - let it propagate
         if (ctx.has_error) {
             break; // Stop parsing on error
+        }
+        
+        // Handle statements that pushed themselves to the stack
+        if (ctx.node_stack.size() > stack_size_before) {
+            uint32_t statement_node = ctx.node_stack.back();
+            ctx.node_stack.pop_back();
+            
+            // Debug output for node 12
+            if (statement_node == 12) {
+                std::cerr << "DEBUG: parse_program adding node 12 from stack to ROOT" << std::endl;
+            }
+            
+            add_child(ROOT_NODE_INDEX, statement_node);
         }
         
         // Skip any trailing newlines after each statement
@@ -650,7 +684,7 @@ void Parser::parse_if_statement() {
     
     uint32_t if_node = create_node(NodeType::IF_STATEMENT);
     
-    // Parse condition
+    // Parse condition and link it as first child
     parse_expression();
     uint32_t condition_node = ctx.node_stack.back();
     ctx.node_stack.pop_back();
@@ -659,7 +693,7 @@ void Parser::parse_if_statement() {
         error_at_current("Expected ':' after if condition");
     }
     
-    // Parse then block
+    // Parse then block and link it as second child
     parse_block();
     uint32_t then_node = ctx.node_stack.back();
     ctx.node_stack.pop_back();
@@ -675,11 +709,20 @@ void Parser::parse_if_statement() {
         }
     }
     
+    // Set the specific indices for if statement
     ctx.nodes[if_node].if_statement.condition_index = condition_node;
     ctx.nodes[if_node].if_statement.then_block_index = then_node;
     ctx.nodes[if_node].if_statement.else_block_index = else_node;
     
-    add_child(ROOT_NODE_INDEX, if_node);
+    // Link condition and blocks as children of the if node (don't add to ROOT)
+    add_child(if_node, condition_node);
+    add_child(if_node, then_node);
+    if (else_node != 0) {
+        add_child(if_node, else_node);
+    }
+    
+    // Push if node to stack instead of adding to ROOT directly
+    ctx.node_stack.push_back(if_node);
 }
 
 void Parser::parse_while_statement() {
@@ -687,7 +730,7 @@ void Parser::parse_while_statement() {
     
     uint32_t while_node = create_node(NodeType::WHILE_STATEMENT);
     
-    // Parse condition
+    // Parse condition and link it as first child
     parse_expression();
     uint32_t condition_node = ctx.node_stack.back();
     ctx.node_stack.pop_back();
@@ -696,15 +739,21 @@ void Parser::parse_while_statement() {
         error_at_current("Expected ':' after while condition");
     }
     
-    // Parse body
+    // Parse body and link it as second child
     parse_block();
     uint32_t body_node = ctx.node_stack.back();
     ctx.node_stack.pop_back();
     
+    // Set the specific indices for while statement
     ctx.nodes[while_node].while_statement.condition_index = condition_node;
     ctx.nodes[while_node].while_statement.body_index = body_node;
     
-    add_child(ROOT_NODE_INDEX, while_node);
+    // Link condition and body as children of the while node (don't add to ROOT)
+    add_child(while_node, condition_node);
+    add_child(while_node, body_node);
+    
+    // Push while node to stack instead of adding to ROOT directly
+    ctx.node_stack.push_back(while_node);
 }
 
 void Parser::parse_for_statement() {
@@ -730,7 +779,7 @@ void Parser::parse_for_statement() {
     uint32_t var_node = create_node(NodeType::IDENTIFIER);
     ctx.nodes[var_node].identifier.name_index = ctx.strings.add_string(var_name);
     
-    // Parse iterable expression
+    // Parse iterable expression and link it as second child
     parse_expression();
     uint32_t iterable_node = ctx.node_stack.back();
     ctx.node_stack.pop_back();
@@ -740,16 +789,23 @@ void Parser::parse_for_statement() {
         return;
     }
     
-    // Parse body
+    // Parse body and link it as third child
     parse_block();
     uint32_t body_node = ctx.node_stack.back();
     ctx.node_stack.pop_back();
     
+    // Set the specific indices for for statement
     ctx.nodes[for_node].for_statement.variable_index = var_node;
     ctx.nodes[for_node].for_statement.iterable_index = iterable_node;
     ctx.nodes[for_node].for_statement.body_index = body_node;
     
-    add_child(ROOT_NODE_INDEX, for_node);
+    // Link variable, iterable, and body as children of the for node (don't add to ROOT)
+    add_child(for_node, var_node);
+    add_child(for_node, iterable_node);
+    add_child(for_node, body_node);
+    
+    // Push for node to stack instead of adding to ROOT directly
+    ctx.node_stack.push_back(for_node);
 }
 
 void Parser::parse_function_definition() {
@@ -866,9 +922,13 @@ void Parser::parse_block() {
         
         // Add any new statements to the block
         for (size_t i = stmt_start; i < ctx.nodes.size(); i++) {
-            if (ctx.nodes[i].parent_index == ROOT_NODE_INDEX) { // Top-level statement
+            // Check for orphaned nodes (parent_index == INVALID_INDEX) or nodes added to ROOT
+            if (ctx.nodes[i].parent_index == ROOT_NODE_INDEX || ctx.nodes[i].parent_index == INVALID_INDEX) {
                 statements.push_back(static_cast<uint32_t>(i));
                 ctx.nodes[i].parent_index = block_node;
+                
+                // Debug output
+                std::cerr << "DEBUG: Block collecting node " << i << " (type=" << static_cast<int>(ctx.nodes[i].type) << ")" << std::endl;
             }
         }
     }
@@ -880,6 +940,7 @@ void Parser::parse_block() {
     
     ctx.nodes[block_node].block.statement_count = static_cast<uint32_t>(statements.size());
     if (!statements.empty()) {
+        ctx.nodes[block_node].first_child_index = statements[0]; // Set first child
         ctx.nodes[block_node].block.statements_start_index = statements[0];
         // Link statements as siblings
         for (size_t i = 1; i < statements.size(); i++) {

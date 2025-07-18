@@ -4,6 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <iomanip>
+#include <unordered_set>
 
 namespace Dakota {
 
@@ -1254,9 +1255,24 @@ std::vector<uint32_t> Interpreter::get_child_indices(uint32_t start_index) const
     if (start_index == 0) return indices;
     
     uint32_t current = start_index;
+    std::unordered_set<uint32_t> visited; // Prevent infinite loops
+    
     while (current != 0 && current < parser_.get_nodes().size()) {
+        // Check for circular reference
+        if (visited.find(current) != visited.end()) {
+            std::cerr << "Warning: Circular reference detected in node siblings at index " << current << std::endl;
+            break;
+        }
+        visited.insert(current);
+        
         indices.push_back(current);
         current = parser_.get_nodes()[current].next_sibling_index;
+        
+        // Safety limit to prevent infinite loops
+        if (indices.size() > 1000) {
+            std::cerr << "Warning: Too many sibling nodes, possible infinite loop" << std::endl;
+            break;
+        }
     }
     
     return indices;
