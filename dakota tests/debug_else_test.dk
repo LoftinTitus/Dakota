@@ -1,0 +1,6 @@
+print("Before if")
+if false:
+    print("Inside if")
+else:
+    print("Inside else")
+print("After if")

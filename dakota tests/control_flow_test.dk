@@ -1,0 +1,11 @@
+if true:
+    print("If statement works")
+
+x = 0
+while x < 3:
+    print(x)
+    x = x + 1
+
+for i in [1, 2, 3]:
+    print("Loop iteration:")
+    print(i)

@@ -1,0 +1,18 @@
+print("Testing expression statements...")
+print(10 + 5)
+print(20 * 3)
+
+x = 42
+print(x)
+
+M = [1, 2; 3, 4]
+print("Matrix:")
+print(M)
+
+N = M + M
+print("Matrix addition:")
+print(N)
+
+print("String concatenation test")
+name = "Dakota"
+print(name)
