@@ -875,6 +875,8 @@ Value Interpreter::evaluate_node(uint32_t node_index) {
     
     const ASTNode& node = parser_.get_nodes()[node_index];
     
+    std::cerr << "DEBUG: evaluate_node called on type " << static_cast<int>(node.type) << " at index " << node_index << std::endl;
+    
     switch (node.type) {
         case NodeType::INTEGER_LITERAL:
             return Value(node.integer_literal.value);
@@ -1113,6 +1115,8 @@ void Interpreter::execute_statement(uint32_t node_index) {
     
     const ASTNode& node = parser_.get_nodes()[node_index];
     
+    std::cerr << "DEBUG: execute_statement called on type " << static_cast<int>(node.type) << " at index " << node_index << std::endl;
+    
     switch (node.type) {
         case NodeType::EXPRESSION_STATEMENT:
             // Use first_child_index instead of expression_index field
@@ -1240,6 +1244,12 @@ void Interpreter::execute_block(uint32_t node_index) {
     
     // Get all child statements
     std::vector<uint32_t> statement_indices = get_child_indices(node.first_child_index);
+    
+    std::cerr << "DEBUG: execute_block at index " << node_index << " found " << statement_indices.size() << " children: ";
+    for (uint32_t idx : statement_indices) {
+        std::cerr << idx << " ";
+    }
+    std::cerr << std::endl;
     
     for (uint32_t stmt_index : statement_indices) {
         execute_statement(stmt_index);
